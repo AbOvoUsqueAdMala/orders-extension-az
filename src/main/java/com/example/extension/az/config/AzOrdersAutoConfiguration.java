@@ -1,6 +1,5 @@
 package com.example.extension.az.config;
 
-import com.example.extension.az.controller.AzOrderController;
 import com.example.extension.az.service.AzOrderGateway;
 import com.example.extension.az.service.AzOrderStateService;
 import com.example.extension.az.service.AzOrderWorkflow;
@@ -22,7 +21,7 @@ import org.springframework.web.client.RestClient;
 		before = {HibernateJpaAutoConfiguration.class, JpaRepositoriesAutoConfiguration.class})
 @AutoConfigurationPackage(basePackages = "com.example.extension.az")
 @Import({AzOrderStateService.class, AzOrderWorkflow.class,
-		AzOrderController.class, AzOrderTasks.class})
+		AzOrderTasks.class})
 public class AzOrdersAutoConfiguration {
 	@Bean
 	AzOrderGateway azOrderGateway(RestClient.Builder builder,

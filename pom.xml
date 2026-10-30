@@ -10,7 +10,7 @@
     </parent>
     <groupId>com.example</groupId>
     <artifactId>orders-extension-az</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>2.0.0-SNAPSHOT</version>
     <name>Orders Extension AZ</name>
     <description>Standalone Spring Boot orders extension for AZ</description>
     <url>https://github.com/AbOvoUsqueAdMala/orders-extension-az</url>
@@ -20,8 +20,8 @@
         <wiremock.version>3.13.1</wiremock.version>
     </properties>
     <dependencies>
-        <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-web</artifactId></dependency>
-        <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-validation</artifactId></dependency>
+        <dependency><groupId>org.springframework</groupId><artifactId>spring-web</artifactId></dependency>
+        <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-json</artifactId></dependency>
         <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-data-jpa</artifactId></dependency>
         <dependency><groupId>com.github.kagkarlsson</groupId><artifactId>db-scheduler-spring-boot-starter</artifactId><version>${db-scheduler.version}</version></dependency>
         <dependency><groupId>org.flywaydb</groupId><artifactId>flyway-core</artifactId></dependency>

@@ -13,7 +13,7 @@ public class AzOrderGateway {
 	public String register(AzOrderView customerOrder, String idempotencyKey) {
 		var registration = restClient.post().uri("/az/source/orders")
 				.header("Idempotency-Key", idempotencyKey)
-				.body(Map.of("id", customerOrder.id(), "description", customerOrder.description()))
+				.body(Map.of("id", customerOrder.id(), "description", customerOrder.details()))
 				.retrieve().body(Registration.class);
 		if (registration == null || registration.externalId() == null
 				|| registration.externalId().isBlank() || registration.externalId().length() > 200) {

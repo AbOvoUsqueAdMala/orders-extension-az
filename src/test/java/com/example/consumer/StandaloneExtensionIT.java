@@ -11,12 +11,12 @@ import static org.awaitility.Awaitility.await;
 
 import com.example.consumer.model.entity.ConsumerOrder;
 import com.example.consumer.repository.ConsumerOrderRepository;
-import com.fasterxml.jackson.databind.JsonNode;
+import com.example.extension.az.model.dto.AzOrderCommand;
+import com.example.extension.az.service.AzOrderStateService;
 import com.github.kagkarlsson.scheduler.Scheduler;
 import com.github.kagkarlsson.scheduler.task.Task;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import java.time.Duration;
-import java.util.Map;
 import java.util.UUID;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.AfterAll;
@@ -24,13 +24,12 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.flyway.FlywayMigrationInitializer;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.context.ApplicationContext;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.springframework.web.client.RestClient;
+import org.springframework.web.bind.annotation.RestController;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -38,7 +37,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @Testcontainers
 @DirtiesContext
 @SpringBootTest(classes = ConsumerApplication.class,
-		webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+		webEnvironment = SpringBootTest.WebEnvironment.NONE)
 class StandaloneExtensionIT {
 	@Container
 	private static final PostgreSQLContainer<?> POSTGRES =
@@ -51,8 +50,8 @@ class StandaloneExtensionIT {
 	private ConsumerOrderRepository consumerOrderRepository;
 	@Autowired
 	private JdbcTemplate database;
-	@LocalServerPort
-	private int port;
+	@Autowired
+	private AzOrderStateService orderStateService;
 
 	@DynamicPropertySource
 	static void properties(DynamicPropertyRegistry properties) {
@@ -88,21 +87,17 @@ class StandaloneExtensionIT {
 
 	@Test
 	void automaticallyRegistersAndExecutesLibraryChain() {
-		RestClient client = RestClient.create("http://localhost:" + port);
-		var response = client.post().uri("/api/extension/az/orders")
-				.body(Map.of("description", "Order from independent consumer"))
-				.retrieve().toEntity(JsonNode.class);
-		assertThat(response.getStatusCode().value()).isEqualTo(202);
-		String location = response.getHeaders().getLocation().toString();
+		assertThat(applicationContext.getBeansWithAnnotation(RestController.class)).isEmpty();
+		var created = orderStateService.create(
+				new AzOrderCommand("Order from independent consumer"));
 		await().atMost(Duration.ofSeconds(20)).untilAsserted(() -> {
-			JsonNode order = client.get().uri(location).retrieve().body(JsonNode.class);
-			assertThat(order.path("status").asText()).isEqualTo("SENT");
-			assertThat(order.path("history").size()).isEqualTo(3);
-			assertThat(order.path("history").get(0).path("taskName").asText())
-					.isEqualTo("AZ_REGISTER_ORDER");
+			var order = orderStateService.get(created.id());
+			assertThat(order.details()).isEqualTo("Order from independent consumer");
+			assertThat(order.status()).isEqualTo("SENT");
+			assertThat(order.history()).hasSize(3);
+			assertThat(order.history().getFirst().taskName()).isEqualTo("AZ_REGISTER_ORDER");
 		});
 	}
-
 	private static WireMockServer wiremock() {
 		var server = new WireMockServer(wireMockConfig().dynamicPort().globalTemplating(true));
 		server.start();
